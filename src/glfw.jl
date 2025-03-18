@@ -1,0 +1,6 @@
+create_window(width::Ti, height::Ti, title) where {Ti<:Int} = GLFW.CreateWindow(width, height, title)
+make_context_current(window) = GLFW.MakeContextCurrent(window)
+window_should_close(window) = GLFW.WindowShouldClose(window)
+swap_buffers(window) = GLFW.SwapBuffers(window)
+poll_events() = GLFW.PollEvents()
+destroy_window(window) = GLFW.DestroyWindow(window)

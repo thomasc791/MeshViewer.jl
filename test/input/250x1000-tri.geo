@@ -1,0 +1,30 @@
+meshSize = 250;
+ySize = meshSize+1;
+xSize = 4*meshSize+1;
+
+width = 4;
+height = 1;
+
+Point(1) = {0, 0, 0, 1.0};
+Point(2) = {width, 0, 0, 1.0};
+Point(3) = {width, height, 0, 1.0};
+Point(4) = {0, height, 0, 1.0};
+
+Line(1) = {1, 2};
+Line(2) = {2, 3};
+Line(3) = {3, 4};
+Line(4) = {4, 1};
+
+
+Curve Loop(1) = {4, 1, 2, 3};
+Plane Surface(1) = {1};
+
+// Ensure point is in surface
+Transfinite Surface {1};
+
+Transfinite Curve {2, 4} = ySize Using Progression 1;
+Transfinite Curve {3, 1} = xSize Using Progression 1;
+
+Physical Curve("bottom", 1) = {1};
+Physical Curve("right", 2) = {2};
+Physical Curve("left", 3) = {4};

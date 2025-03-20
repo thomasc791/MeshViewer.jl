@@ -6,6 +6,25 @@ function createShader(source, type_)
   return shader
 end
 
+function init_shaders(vertex, fragment)
+  vertexPath = join(["src/shaders/", vertex])
+  fragmentPath = join(["src/shaders/", fragment])
+  vertexString = read(vertexPath, String)
+  fragmentString = read(fragmentPath, String)
+
+  vs = createShader(vertexString, GL_VERTEX_SHADER)
+  fs = createShader(fragmentString, GL_FRAGMENT_SHADER)
+
+  id = glCreateProgram()
+  glAttachShader(id, vs)
+  glAttachShader(id, fs)
+  glLinkProgram(id)
+  glDeleteShader(vs)
+  glDeleteShader(fs)
+
+  return id
+end
+
 function glInfoLog(object)
   isShader = glIsShader(object)
   iv = isShader == GL_TRUE ? glGetShaderiv : glGetProgramiv
@@ -42,4 +61,8 @@ function glBuffers(n)
   ids = GLuint[i for i in 0:n-1]
   glGenBuffers(n, ids)
   return ids
+end
+
+function set_mat4(program, name, A::Matrix{T}) where {T}
+  glUniformMatrix4fv(glGetUniformLocation(program, name), 1, GL_FALSE, A)
 end

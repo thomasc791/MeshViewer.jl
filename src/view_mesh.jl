@@ -1,5 +1,6 @@
 function viewer(vertices)
   # create GLFW window and make the window's current context
+  width, height = 800, 600
   window = create_window(800, 600, "Mesh Viewer")
   make_context_current(window)
 
@@ -7,94 +8,99 @@ function viewer(vertices)
   io = init_imgui(window)
 
   # initialise the vertex buffer
-  data = [GLfloat[0.0, 0.5, 0.0, 0.5, -0.5, 0.0, -0.5, -0.5, 0.0]]
-  vao, vbo = init_vertex(data)
-  id = init_shaders()
+  data = [convert(Vector{GLfloat}, vert) for vert in vertices]
+
+  triID = init_shaders("tri-vertex.glsl", "tri-fragment.glsl")
+  lineID = init_shaders("line-vertex.glsl", "line-fragment.glsl")
 
   # use shader program
-  glUseProgram(id)
 
-  positionAttrib = glGetAttribLocation(id, "position")
-  glVertexAttribPointer(positionAttrib, 3, GL_FLOAT, GL_FALSE, 0, C_NULL)
-  glEnableVertexAttribArray(positionAttrib)
+  vaoLine, vboLine = init_vertex([data[1]])
+  glUseProgram(lineID)
+  initialise_id(lineID, width, height)
 
+  vaoTri, vboTri = init_vertex([data[2]])
+  glUseProgram(triID)
+  initialise_id(triID, width, height)
+
+  # scroll callback
+  scrollValue::Float64 = 1.0
+  viewMat, projMat = (Matrix{GLfloat}(I, 4, 4) for _ in 1:2)
+  position = GLfloat[0.0, 0.0, 3.0]
+  target = GLfloat[0.0, 0.0, 0.0]
+  up = GLfloat[0.0, 1.0, 0.0]
+  camera = Camera(scrollValue, position, target, up, viewMat, projMat)
+
+  function scroll_callback(_::GLFW.Window, _, yoffset)
+    camera.scrollValue += 0.025 * yoffset
+    camera.position[3] -= 0.025 * yoffset
+  end
+  GLFW.SetScrollCallback(window, scroll_callback)
+
+  # framebuffer size callback
+  function framebuffer_size_callback(_, width, height)
+    glViewport(0, 0, width, height)
+    glUseProgram(lineID)
+    initialise_id(lineID, width, height)
+    glUseProgram(triID)
+    initialise_id(triID, width, height)
+  end
+  GLFW.SetFramebufferSizeCallback(window, framebuffer_size_callback)
+
+  # initialise variables
+  prev, t = 0, 0
+  showMesh = [true, false]
   while !window_should_close(window)
-    main_loop(window, vao)
+    next = time()
+    fps = 1 / (next - prev)
+    main_loop(window, camera, [lineID, triID], [vaoLine[], vaoTri[]], [vboLine[], vboTri[]], [length(vertices[1]) / 3, length(vertices[2]) / 3], fps, showMesh)
+    t += 0.01
+    prev = next
   end
 
   destroy_window(window)
 end
 
-function main_loop(window, vao)
+function main_loop(window, camera, ids, vao, vbo, len, fps, showMesh)
   poll_events()
   windowWidth, windowHeight = GLFW.GetFramebufferSize(window)
   glClearColor(0.5, 0.5, 0.3, 1.0)
   glClear(GL_COLOR_BUFFER_BIT)
 
-  for v in vao
-    glBindVertexArray(v)
-    glDrawArrays(GL_TRIANGLES, 0, 3)
-    glBindVertexArray(0)
+  if showMesh[1]
+    glUseProgram(ids[2])
+    set_view(ids[2], camera)
+    glBindVertexArray(vao[2])
+    glDrawArrays(GL_TRIANGLES, 0, len[2])
+  end
+
+  if showMesh[2]
+    glUseProgram(ids[1])
+    set_view(ids[1], camera)
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[1])
+    glBindVertexArray(vao[1])
+    glDrawArrays(GL_LINES, 0, len[1])
   end
 
   # initialising and drawing the ImGui menu
   ImGui_ImplOpenGL3_NewFrame()
   ImGui_ImplGlfw_NewFrame()
-  imgui_menu(windowWidth, windowHeight)
+  showMesh = imgui_menu(windowWidth, windowHeight, showMesh)
   CImGui.Render()
 
   ImGui_ImplOpenGL3_RenderDrawData(CImGui.GetDrawData())
   swap_buffers(window)
 end
 
-function init_vertex(data)
-  n = size(data, 1)
-  vao = glVertexArrays(n)
-  vbo = glBuffers(n)
-  for i in axes(vao, 1)
-    glBindVertexArray(vao[i])
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[i])
-    glBufferData(GL_ARRAY_BUFFER, sizeof(data[i]), data[i], GL_STATIC_DRAW)
-  end
-
-  return vbo, vao
+function set_view(id, camera::Camera)
+  set_mat4(id, "view", look_at!(camera::Camera))
 end
 
-function init_shaders()
-  vertexString = read("src/shaders/vertex.glsl", String)
-  fragmentString = read("src/shaders/fragment.glsl", String)
+function initialise_id(id, width, height)
+  positionAttrib = glGetAttribLocation(id, "position")
+  glVertexAttribPointer(positionAttrib, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), C_NULL)
+  glEnableVertexAttribArray(positionAttrib)
 
-  vs = createShader(vertexString, GL_VERTEX_SHADER)
-  fs = createShader(fragmentString, GL_FRAGMENT_SHADER)
-
-  id = glCreateProgram()
-  glAttachShader(id, vs)
-  glAttachShader(id, fs)
-  glLinkProgram(id)
-  glDeleteShader(vs)
-  glDeleteShader(fs)
-
-  return id
-end
-
-function init_imgui(window)
-  CImGui.CreateContext()
-  io = CImGui.GetIO()
-  io.ConfigFlags = unsafe_load(io.ConfigFlags) | ImGuiConfigFlags_NavEnableKeyboard
-  CImGui.StyleColorsDark()
-  ImGui_ImplGlfw_InitForOpenGL(window.handle, true)
-  ImGui_ImplOpenGL3_Init("#version 460")
-
-  return io
-end
-
-function imgui_menu(wWidth, wHeight)
-  CImGui.NewFrame()
-  begin
-    CImGui.SetNextWindowSize(ImVec2(200, wHeight / 4))
-    CImGui.SetNextWindowPos(ImVec2(0, 0))
-    CImGui.Begin("Test")
-    CImGui.Text("hello")
-    CImGui.End()
-  end
+  projection = perspective(pi / 4, width / height, 0.1, 100.0)
+  set_mat4(id, "projection", projection)
 end

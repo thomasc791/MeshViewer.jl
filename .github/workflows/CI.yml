@@ -36,5 +36,4 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v2
-      - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-runtest@v1
+      - run: julia -e ' using Pkg; Pkg.Registry.add(name="General"); Pkg.Registry.add(url="https://github.com/thomasc791/ElementaRegistry.git"); Pkg.test(coverage=true)'

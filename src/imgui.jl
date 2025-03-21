@@ -25,15 +25,12 @@ function imgui_menu(wWidth, wHeight, showWhat)
           if item == "Surface"
             showWhat[1] = true
             showWhat[2] = false
-            display(item)
           elseif item == "Surface With Edges"
             showWhat[1] = true
             showWhat[2] = true
-            display(item)
           elseif item == "Frame"
             showWhat[1] = false
             showWhat[2] = true
-            display(item)
           end
         end
         if selected

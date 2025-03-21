@@ -1,7 +1,7 @@
 name = "MeshViewer"
 uuid = "f005f57a-73ba-4db4-9eca-a34f8f0e4df1"
 authors = ["Thomas Cheng thomasc791@gmail.com"]
-version = "1.0.0-DEV"
+version = "0.0.1"
 
 [deps]
 CImGui = "5d785b6c-b76f-510e-a07c-3070796c7e87"

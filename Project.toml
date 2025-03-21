@@ -5,7 +5,6 @@ version = "0.0.1"
 
 [deps]
 CImGui = "5d785b6c-b76f-510e-a07c-3070796c7e87"
-Elementa = "daa31125-8cb0-4887-808e-47737bbb35c3"
 GLFW = "f7f18e0c-5ee9-5ccd-a5bf-e8befd85ed98"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 ModernGL = "66fc600b-dfda-50eb-8b99-91cfa97b1301"
@@ -13,7 +12,6 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [compat]
 CImGui = "5.1.1"
-Elementa = "0.0.1"
 GLFW = "3.4.3"
 LinearAlgebra = "1.11.0"
 ModernGL = "1.1.8"

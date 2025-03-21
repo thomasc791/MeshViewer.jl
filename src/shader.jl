@@ -7,8 +7,9 @@ function createShader(source, type_)
 end
 
 function init_shaders(vertex, fragment)
-  vertexPath = join(["src/shaders/", vertex])
-  fragmentPath = join(["src/shaders/", fragment])
+  pathOfModule = replace(pathof(@__MODULE__), "MeshViewer.jl" => "")
+  vertexPath = join([pathOfModule, "shaders/", vertex])
+  fragmentPath = join([pathOfModule, "shaders/", fragment])
   vertexString = read(vertexPath, String)
   fragmentString = read(fragmentPath, String)
 

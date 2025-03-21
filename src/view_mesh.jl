@@ -4,9 +4,6 @@ function viewer(vertices)
   window = create_window(800, 600, "Mesh Viewer")
   make_context_current(window)
 
-  # create ImGui context and initialise ImGui
-  io = init_imgui(window)
-
   # initialise the vertex buffer
   data = [convert(Vector{GLfloat}, vert) for vert in vertices]
 
@@ -37,6 +34,32 @@ function viewer(vertices)
   end
   GLFW.SetScrollCallback(window, scroll_callback)
 
+  moveCamera, prevPos, modelTranslation = false, GLfloat[0, 0], GLfloat[0, 0, 0, 0]
+  function cursor_pos_callback(_, x, y)
+    if moveCamera
+      modelTranslation[1] += (x - prevPos[1]) * 0.005 * 1 / camera.scrollValue
+      modelTranslation[2] -= (y - prevPos[2]) * 0.005 * 1 / camera.scrollValue
+      glUseProgram(triID)
+      set_vec4(triID, "translation", modelTranslation)
+      glUseProgram(lineID)
+      set_vec4(lineID, "translation", modelTranslation)
+    end
+    prevPos[1] = x
+    prevPos[2] = y
+  end
+  GLFW.SetCursorPosCallback(window, cursor_pos_callback)
+
+  function mouse_button_callback(window, button, action, mods)
+    io = CImGui.GetIO()
+    CImGui.AddMouseButtonEvent(io, button, action == GLFW.PRESS)
+    if button == GLFW.MOUSE_BUTTON_LEFT && action == GLFW.PRESS
+      moveCamera = true
+    elseif button == GLFW.MOUSE_BUTTON_LEFT && action == GLFW.RELEASE
+      moveCamera = false
+    end
+  end
+  GLFW.SetMouseButtonCallback(window, mouse_button_callback)
+
   # framebuffer size callback
   function framebuffer_size_callback(_, width, height)
     glViewport(0, 0, width, height)
@@ -46,6 +69,9 @@ function viewer(vertices)
     initialise_id(triID, width, height)
   end
   GLFW.SetFramebufferSizeCallback(window, framebuffer_size_callback)
+
+  # create ImGui context and initialise ImGui
+  io = init_imgui(window)
 
   # initialise variables
   prev, t = 0, 0

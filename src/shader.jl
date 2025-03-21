@@ -67,3 +67,7 @@ end
 function set_mat4(program, name, A::Matrix{T}) where {T}
   glUniformMatrix4fv(glGetUniformLocation(program, name), 1, GL_FALSE, A)
 end
+
+function set_vec4(program, name, A::Vector{T}) where {T}
+  glUniform4fv(glGetUniformLocation(program, name), 1, A)
+end
